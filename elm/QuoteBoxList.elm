@@ -8,12 +8,14 @@ module QuoteBoxList
 import Html exposing (Attribute, Html, button, div, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
+import RandomQuote exposing (RandomQuote)
 import QuoteBox
 
 type alias Id = Int
 
 type alias Model =
-    { quoteBoxList : List (Id, QuoteBox.Model)
+    { randomQuote  : RandomQuote
+    , quoteBoxList : List (Id, QuoteBox.Model)
     , nextId       : Id
     }
 
@@ -22,17 +24,20 @@ type Action
     | DelQuote Id
 
 init : Model
-init = { quoteBoxList = [], nextId = 0 }
+init = { randomQuote = RandomQuote.init, quoteBoxList = [], nextId = 0 }
 
 update : Action -> Model -> Model
 update action model =
     case action of
         AddQuote -> 
-            let newQuote = QuoteBox.init "Linux Torvalds"
-                                         "static/Linus-Torvalds.jpg"
-                                         "Talk is cheap, show me the code"
-            in { model | quoteBoxList <- 
-                             (model.nextId, newQuote) :: model.quoteBoxList
+            let (newQuote, randomQuote') = 
+                    RandomQuote.genQuote model.randomQuote
+                newQuote' = QuoteBox.Model newQuote.author
+                                           newQuote.imgUrl
+                                           newQuote.quote
+            in { model | randomQuote <- randomQuote' 
+                       , quoteBoxList <-
+                             (model.nextId, newQuote') :: model.quoteBoxList
                        , nextId <- model.nextId + 1
                }
 
