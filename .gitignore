@@ -2,3 +2,4 @@
 *.html
 *.js
 elm/elm-stuff/
+.stack-work/
