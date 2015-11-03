@@ -40,22 +40,22 @@ mkQuotes : Array Quote
 mkQuotes = 
     Array.fromList 
       [ { author = "Linus Torvalds"
-        , imgUrl = "static/Linus-Torvalds.jpg"
+        , imgUrl = "images/Linus-Torvalds.jpg"
         , quote  = "Talk is cheap, show me the code"
         }
       , { author = "Linus Torvalds"
-        , imgUrl = "static/Linus-Torvalds.jpg"
+        , imgUrl = "images/Linus-Torvalds.jpg"
         , quote  = """
                    No-one has even called me a cool dude. I'm
                    somewhere between geek and normal.
                    """
         }
       , { author = "Linus Torvalds"
-        , imgUrl = "static/Linus-Torvalds.jpg"
+        , imgUrl = "images/Linus-Torvalds.jpg"
         , quote  = "Software is like sex: its better when its free."
         }
       , { author = "Dennis M Ritchie"
-        , imgUrl = "static/dennis_macalistair_ritchie_.jpeg"
+        , imgUrl = "images/dennis_macalistair_ritchie_.jpeg"
         , quote  = "C is quirky, flawed, and an enormous success."
         }
       ]
