@@ -5,51 +5,67 @@ module QuoteBoxList
         , view
         ) where
 
+import Effects exposing (Effects, Never)
 import Html exposing (Attribute, Html, button, div, text)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
-import RandomQuote exposing (RandomQuote)
+import Http
+import Json.Decode exposing (..)
+import Task
 import QuoteBox
 
 type alias Id = Int
 
 type alias Model =
-    { randomQuote  : RandomQuote
-    , quoteBoxList : List (Id, QuoteBox.Model)
+    { quoteBoxList : List (Id, QuoteBox.Model)
     , nextId       : Id
     }
 
 type Action 
-    = AddQuote
+    = RequestQuote
+    | GotQuote (Maybe Quote)
     | DelQuote Id
 
-init : Model
-init = { randomQuote = RandomQuote.init, quoteBoxList = [], nextId = 0 }
+type alias Quote =
+    { author : String
+    , imgUrl : String
+    , quote  : String
+    }
 
-update : Action -> Model -> Model
+init : (Model, Effects Action)
+init =
+   ( { quoteBoxList = [], nextId = 0 }
+   , Effects.none
+   )
+
+update : Action -> Model -> (Model, Effects Action)
 update action model =
     case action of
-        AddQuote -> 
-            let (newQuote, randomQuote') = 
-                    RandomQuote.genQuote model.randomQuote
-                newQuote' = QuoteBox.Model newQuote.author
-                                           newQuote.imgUrl
-                                           newQuote.quote
-            in { model | randomQuote <- randomQuote' 
-                       , quoteBoxList <-
-                             (model.nextId, newQuote') :: model.quoteBoxList
-                       , nextId <- model.nextId + 1
-               }
-
-        DelQuote id ->
+        RequestQuote        -> (model, getRandomQuote)
+        GotQuote maybeQuote -> 
+            (maybeAddQuote model maybeQuote, Effects.none)
+        DelQuote id         ->
             let xs = List.filter (\(id', _) -> id' /= id) model.quoteBoxList
-            in { model | quoteBoxList <- xs }
+            in ( { model | quoteBoxList <- xs }
+               , Effects.none
+               )
+
+maybeAddQuote : Model -> Maybe Quote -> Model
+maybeAddQuote model maybeQuote =
+    case maybeQuote of
+        Just q  ->
+            let currId   = model.nextId
+                quoteBox = (currId, QuoteBox.init q.author q.imgUrl q.quote)
+            in { model | nextId <- currId + 1
+                       , quoteBoxList <- quoteBox :: model.quoteBoxList
+               }
+        Nothing -> model
 
 view : Signal.Address Action -> Model -> Html
 view address model =
     let btn = button 
                 [ buttonStyles
-                , onClick address AddQuote
+                , onClick address RequestQuote
                 ] 
                 [ text "Add random quote!" ]
         qts = List.map (viewQuote address) model.quoteBoxList
@@ -59,6 +75,7 @@ viewQuote : Signal.Address Action -> (Id, QuoteBox.Model) -> Html
 viewQuote address (id, model) =
     QuoteBox.view (Signal.forwardTo address (always (DelQuote id))) model
 
+(=>) : a -> b -> (a, b)
 (=>) = (,)
 
 buttonStyles : Attribute
@@ -75,3 +92,17 @@ panelStyles =
       , "height"           => "100%"
       , "background-color" => "black"
       ]
+
+getRandomQuote : Effects Action
+getRandomQuote =
+    Http.get decodeQuote "/api/random-quote"
+      |> Task.toMaybe
+      |> Task.map GotQuote
+      |> Effects.task
+
+decodeQuote : Decoder Quote
+decodeQuote = 
+    object3 Quote
+      ( "author" := string )
+      ( "imgUrl" := string )
+      ( "quote"  := string )

@@ -4,6 +4,7 @@ module Main
     ( main
     ) where
 
+import Control.Monad.IO.Class (liftIO)
 import Data.Aeson
 import Data.Text (Text)
 import GHC.Generics
@@ -36,9 +37,11 @@ router request responseReceived = do
     responseReceived response
 
 getRandomQuote :: IO Quote
-getRandomQuote = return $ Quote "Linus Torvalds"
-                                "Linus-Torvalds.jpg"
-                                "Talk is cheap. Show me the code."
+getRandomQuote = do
+    liftIO $ putStrLn "getRandomQuote called"
+    return $ Quote "Linus Torvalds"
+                   "images/Linus-Torvalds.jpg"
+                   "Talk is cheap. Show me the code."
 
 serveDirectory :: FilePath -> Request -> IO Response
 serveDirectory directory request = do

@@ -1,7 +1,20 @@
+import Effects exposing (Never)
 import Html exposing (Html)
-import StartApp.Simple as StartApp
+import StartApp
+import Task
 
-import QuoteBoxList exposing (..)
+import QuoteBoxList exposing (init, update, view)
+
+app = 
+    StartApp.start 
+      { init   = init
+      , update = update
+      , view   = view
+      , inputs = []
+      }
 
 main : Signal Html
-main = StartApp.start { model = init, update = update, view = view }
+main = app.html
+
+port tasks : Signal (Task.Task Never ())
+port tasks = app.tasks

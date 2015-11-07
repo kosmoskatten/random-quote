@@ -1800,6 +1800,138 @@ Elm.Dict.make = function (_elm) {
                       ,fromList: fromList};
    return _elm.Dict.values;
 };
+Elm.Effects = Elm.Effects || {};
+Elm.Effects.make = function (_elm) {
+   "use strict";
+   _elm.Effects = _elm.Effects || {};
+   if (_elm.Effects.values)
+   return _elm.Effects.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Effects",
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Effects = Elm.Native.Effects.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var ignore = function (task) {
+      return A2($Task.map,
+      $Basics.always({ctor: "_Tuple0"}),
+      task);
+   };
+   var requestTickSending = $Native$Effects.requestTickSending;
+   var toTaskHelp = F3(function (address,
+   effect,
+   _v0) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2":
+            return function () {
+                 switch (effect.ctor)
+                 {case "Batch":
+                    return A3($List.foldl,
+                      toTaskHelp(address),
+                      _v0,
+                      effect._0);
+                    case "None": return _v0;
+                    case "Task":
+                    return function () {
+                         var reporter = A2($Task.andThen,
+                         effect._0,
+                         function (answer) {
+                            return A2($Signal.send,
+                            address,
+                            _L.fromArray([answer]));
+                         });
+                         return {ctor: "_Tuple2"
+                                ,_0: A2($Task.andThen,
+                                _v0._0,
+                                $Basics.always(ignore($Task.spawn(reporter))))
+                                ,_1: _v0._1};
+                      }();
+                    case "Tick":
+                    return {ctor: "_Tuple2"
+                           ,_0: _v0._0
+                           ,_1: A2($List._op["::"],
+                           effect._0,
+                           _v0._1)};}
+                 _U.badCase($moduleName,
+                 "between lines 181 and 200");
+              }();}
+         _U.badCase($moduleName,
+         "between lines 181 and 200");
+      }();
+   });
+   var toTask = F2(function (address,
+   effect) {
+      return function () {
+         var $ = A3(toTaskHelp,
+         address,
+         effect,
+         {ctor: "_Tuple2"
+         ,_0: $Task.succeed({ctor: "_Tuple0"})
+         ,_1: _L.fromArray([])}),
+         combinedTask = $._0,
+         tickMessages = $._1;
+         return $List.isEmpty(tickMessages) ? combinedTask : A2($Task.andThen,
+         combinedTask,
+         $Basics.always(A2(requestTickSending,
+         address,
+         tickMessages)));
+      }();
+   });
+   var Never = function (a) {
+      return {ctor: "Never",_0: a};
+   };
+   var Batch = function (a) {
+      return {ctor: "Batch",_0: a};
+   };
+   var batch = Batch;
+   var None = {ctor: "None"};
+   var none = None;
+   var Tick = function (a) {
+      return {ctor: "Tick",_0: a};
+   };
+   var tick = Tick;
+   var Task = function (a) {
+      return {ctor: "Task",_0: a};
+   };
+   var task = Task;
+   var map = F2(function (func,
+   effect) {
+      return function () {
+         switch (effect.ctor)
+         {case "Batch":
+            return Batch(A2($List.map,
+              map(func),
+              effect._0));
+            case "None": return None;
+            case "Task":
+            return Task(A2($Task.map,
+              func,
+              effect._0));
+            case "Tick":
+            return Tick(function ($) {
+                 return func(effect._0($));
+              });}
+         _U.badCase($moduleName,
+         "between lines 136 and 147");
+      }();
+   });
+   _elm.Effects.values = {_op: _op
+                         ,none: none
+                         ,task: task
+                         ,tick: tick
+                         ,map: map
+                         ,batch: batch
+                         ,toTask: toTask};
+   return _elm.Effects.values;
+};
 Elm.Graphics = Elm.Graphics || {};
 Elm.Graphics.Collage = Elm.Graphics.Collage || {};
 Elm.Graphics.Collage.make = function (_elm) {
@@ -3651,6 +3783,294 @@ Elm.Html.Events.make = function (_elm) {
                              ,Options: Options};
    return _elm.Html.Events.values;
 };
+Elm.Http = Elm.Http || {};
+Elm.Http.make = function (_elm) {
+   "use strict";
+   _elm.Http = _elm.Http || {};
+   if (_elm.Http.values)
+   return _elm.Http.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Http",
+   $Basics = Elm.Basics.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Native$Http = Elm.Native.Http.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Task = Elm.Task.make(_elm),
+   $Time = Elm.Time.make(_elm);
+   var send = $Native$Http.send;
+   var BadResponse = F2(function (a,
+   b) {
+      return {ctor: "BadResponse"
+             ,_0: a
+             ,_1: b};
+   });
+   var UnexpectedPayload = function (a) {
+      return {ctor: "UnexpectedPayload"
+             ,_0: a};
+   };
+   var handleResponse = F2(function (handle,
+   response) {
+      return function () {
+         var _v0 = _U.cmp(200,
+         response.status) < 1 && _U.cmp(response.status,
+         300) < 0;
+         switch (_v0)
+         {case false:
+            return $Task.fail(A2(BadResponse,
+              response.status,
+              response.statusText));
+            case true: return function () {
+                 var _v1 = response.value;
+                 switch (_v1.ctor)
+                 {case "Text":
+                    return handle(_v1._0);}
+                 return $Task.fail(UnexpectedPayload("Response body is a blob, expecting a string."));
+              }();}
+         _U.badCase($moduleName,
+         "between lines 419 and 426");
+      }();
+   });
+   var NetworkError = {ctor: "NetworkError"};
+   var Timeout = {ctor: "Timeout"};
+   var promoteError = function (rawError) {
+      return function () {
+         switch (rawError.ctor)
+         {case "RawNetworkError":
+            return NetworkError;
+            case "RawTimeout":
+            return Timeout;}
+         _U.badCase($moduleName,
+         "between lines 431 and 433");
+      }();
+   };
+   var fromJson = F2(function (decoder,
+   response) {
+      return function () {
+         var decode = function (str) {
+            return function () {
+               var _v4 = A2($Json$Decode.decodeString,
+               decoder,
+               str);
+               switch (_v4.ctor)
+               {case "Err":
+                  return $Task.fail(UnexpectedPayload(_v4._0));
+                  case "Ok":
+                  return $Task.succeed(_v4._0);}
+               _U.badCase($moduleName,
+               "between lines 409 and 412");
+            }();
+         };
+         return A2($Task.andThen,
+         A2($Task.mapError,
+         promoteError,
+         response),
+         handleResponse(decode));
+      }();
+   });
+   var RawNetworkError = {ctor: "RawNetworkError"};
+   var RawTimeout = {ctor: "RawTimeout"};
+   var Blob = function (a) {
+      return {ctor: "Blob",_0: a};
+   };
+   var Text = function (a) {
+      return {ctor: "Text",_0: a};
+   };
+   var Response = F5(function (a,
+   b,
+   c,
+   d,
+   e) {
+      return {_: {}
+             ,headers: c
+             ,status: a
+             ,statusText: b
+             ,url: d
+             ,value: e};
+   });
+   var defaultSettings = {_: {}
+                         ,desiredResponseType: $Maybe.Nothing
+                         ,onProgress: $Maybe.Nothing
+                         ,onStart: $Maybe.Nothing
+                         ,timeout: 0};
+   var post = F3(function (decoder,
+   url,
+   body) {
+      return function () {
+         var request = {_: {}
+                       ,body: body
+                       ,headers: _L.fromArray([])
+                       ,url: url
+                       ,verb: "POST"};
+         return A2(fromJson,
+         decoder,
+         A2(send,
+         defaultSettings,
+         request));
+      }();
+   });
+   var Settings = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,desiredResponseType: d
+             ,onProgress: c
+             ,onStart: b
+             ,timeout: a};
+   });
+   var multipart = $Native$Http.multipart;
+   var FileData = F3(function (a,
+   b,
+   c) {
+      return {ctor: "FileData"
+             ,_0: a
+             ,_1: b
+             ,_2: c};
+   });
+   var BlobData = F3(function (a,
+   b,
+   c) {
+      return {ctor: "BlobData"
+             ,_0: a
+             ,_1: b
+             ,_2: c};
+   });
+   var blobData = BlobData;
+   var StringData = F2(function (a,
+   b) {
+      return {ctor: "StringData"
+             ,_0: a
+             ,_1: b};
+   });
+   var stringData = StringData;
+   var BodyBlob = function (a) {
+      return {ctor: "BodyBlob"
+             ,_0: a};
+   };
+   var BodyFormData = {ctor: "BodyFormData"};
+   var ArrayBuffer = {ctor: "ArrayBuffer"};
+   var BodyString = function (a) {
+      return {ctor: "BodyString"
+             ,_0: a};
+   };
+   var string = BodyString;
+   var Empty = {ctor: "Empty"};
+   var empty = Empty;
+   var getString = function (url) {
+      return function () {
+         var request = {_: {}
+                       ,body: empty
+                       ,headers: _L.fromArray([])
+                       ,url: url
+                       ,verb: "GET"};
+         return A2($Task.andThen,
+         A2($Task.mapError,
+         promoteError,
+         A2(send,
+         defaultSettings,
+         request)),
+         handleResponse($Task.succeed));
+      }();
+   };
+   var get = F2(function (decoder,
+   url) {
+      return function () {
+         var request = {_: {}
+                       ,body: empty
+                       ,headers: _L.fromArray([])
+                       ,url: url
+                       ,verb: "GET"};
+         return A2(fromJson,
+         decoder,
+         A2(send,
+         defaultSettings,
+         request));
+      }();
+   });
+   var Request = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,body: d
+             ,headers: b
+             ,url: c
+             ,verb: a};
+   });
+   var uriDecode = $Native$Http.uriDecode;
+   var uriEncode = $Native$Http.uriEncode;
+   var queryEscape = function (string) {
+      return A2($String.join,
+      "+",
+      A2($String.split,
+      "%20",
+      uriEncode(string)));
+   };
+   var queryPair = function (_v7) {
+      return function () {
+         switch (_v7.ctor)
+         {case "_Tuple2":
+            return A2($Basics._op["++"],
+              queryEscape(_v7._0),
+              A2($Basics._op["++"],
+              "=",
+              queryEscape(_v7._1)));}
+         _U.badCase($moduleName,
+         "on line 63, column 3 to 46");
+      }();
+   };
+   var url = F2(function (domain,
+   args) {
+      return function () {
+         switch (args.ctor)
+         {case "[]": return domain;}
+         return A2($Basics._op["++"],
+         domain,
+         A2($Basics._op["++"],
+         "?",
+         A2($String.join,
+         "&",
+         A2($List.map,queryPair,args))));
+      }();
+   });
+   var TODO_implement_file_in_another_library = {ctor: "TODO_implement_file_in_another_library"};
+   var TODO_implement_blob_in_another_library = {ctor: "TODO_implement_blob_in_another_library"};
+   _elm.Http.values = {_op: _op
+                      ,getString: getString
+                      ,get: get
+                      ,post: post
+                      ,send: send
+                      ,url: url
+                      ,uriEncode: uriEncode
+                      ,uriDecode: uriDecode
+                      ,empty: empty
+                      ,string: string
+                      ,multipart: multipart
+                      ,stringData: stringData
+                      ,blobData: blobData
+                      ,defaultSettings: defaultSettings
+                      ,fromJson: fromJson
+                      ,Request: Request
+                      ,Settings: Settings
+                      ,Response: Response
+                      ,Text: Text
+                      ,Blob: Blob
+                      ,Timeout: Timeout
+                      ,NetworkError: NetworkError
+                      ,UnexpectedPayload: UnexpectedPayload
+                      ,BadResponse: BadResponse
+                      ,RawTimeout: RawTimeout
+                      ,RawNetworkError: RawNetworkError};
+   return _elm.Http.values;
+};
 Elm.Json = Elm.Json || {};
 Elm.Json.Decode = Elm.Json.Decode || {};
 Elm.Json.Decode.make = function (_elm) {
@@ -4166,18 +4586,25 @@ Elm.Main.make = function (_elm) {
    _L = _N.List.make(_elm),
    $moduleName = "Main",
    $Basics = Elm.Basics.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $QuoteBoxList = Elm.QuoteBoxList.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $StartApp$Simple = Elm.StartApp.Simple.make(_elm);
-   var main = $StartApp$Simple.start({_: {}
-                                     ,model: $QuoteBoxList.init
-                                     ,update: $QuoteBoxList.update
-                                     ,view: $QuoteBoxList.view});
+   $StartApp = Elm.StartApp.make(_elm),
+   $Task = Elm.Task.make(_elm);
+   var app = $StartApp.start({_: {}
+                             ,init: $QuoteBoxList.init
+                             ,inputs: _L.fromArray([])
+                             ,update: $QuoteBoxList.update
+                             ,view: $QuoteBoxList.view});
+   var main = app.html;
+   var tasks = Elm.Native.Task.make(_elm).performSignal("tasks",
+   app.tasks);
    _elm.Main.values = {_op: _op
+                      ,app: app
                       ,main: main};
    return _elm.Main.values;
 };
@@ -5501,6 +5928,147 @@ Elm.Native.Debug.make = function(localRuntime) {
 		watch: F2(watch),
 		watchSummary:F3(watchSummary),
 	};
+};
+
+Elm.Native.Effects = {};
+Elm.Native.Effects.make = function(localRuntime) {
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Effects = localRuntime.Native.Effects || {};
+	if (localRuntime.Native.Effects.values)
+	{
+		return localRuntime.Native.Effects.values;
+	}
+
+	var Task = Elm.Native.Task.make(localRuntime);
+	var Utils = Elm.Native.Utils.make(localRuntime);
+	var Signal = Elm.Signal.make(localRuntime);
+	var List = Elm.Native.List.make(localRuntime);
+
+
+	// polyfill so things will work even if rAF is not available for some reason
+	var _requestAnimationFrame =
+		typeof requestAnimationFrame !== 'undefined'
+			? requestAnimationFrame
+			: function(cb) { setTimeout(cb, 1000 / 60); }
+			;
+
+
+	// batchedSending and sendCallback implement a small state machine in order
+	// to schedule only one send(time) call per animation frame.
+	//
+	// Invariants:
+	// 1. In the NO_REQUEST state, there is never a scheduled sendCallback.
+	// 2. In the PENDING_REQUEST and EXTRA_REQUEST states, there is always exactly
+	//    one scheduled sendCallback.
+	var NO_REQUEST = 0;
+	var PENDING_REQUEST = 1;
+	var EXTRA_REQUEST = 2;
+	var state = NO_REQUEST;
+	var messageArray = [];
+
+
+	function batchedSending(address, tickMessages)
+	{
+		// insert ticks into the messageArray
+		var foundAddress = false;
+
+		for (var i = messageArray.length; i--; )
+		{
+			if (messageArray[i].address === address)
+			{
+				foundAddress = true;
+				messageArray[i].tickMessages = A3(List.foldl, List.cons, messageArray[i].tickMessages, tickMessages);
+				break;
+			}
+		}
+
+		if (!foundAddress)
+		{
+			messageArray.push({ address: address, tickMessages: tickMessages });
+		}
+
+		// do the appropriate state transition
+		switch (state)
+		{
+			case NO_REQUEST:
+				_requestAnimationFrame(sendCallback);
+				state = PENDING_REQUEST;
+				break;
+			case PENDING_REQUEST:
+				state = PENDING_REQUEST;
+				break;
+			case EXTRA_REQUEST:
+				state = PENDING_REQUEST;
+				break;
+		}
+	}
+
+
+	function sendCallback(time)
+	{
+		switch (state)
+		{
+			case NO_REQUEST:
+				// This state should not be possible. How can there be no
+				// request, yet somehow we are actively fulfilling a
+				// request?
+				throw new Error(
+					'Unexpected send callback.\n' +
+					'Please report this to <https://github.com/evancz/elm-effects/issues>.'
+				);
+
+			case PENDING_REQUEST:
+				// At this point, we do not *know* that another frame is
+				// needed, but we make an extra request to rAF just in
+				// case. It's possible to drop a frame if rAF is called
+				// too late, so we just do it preemptively.
+				_requestAnimationFrame(sendCallback);
+				state = EXTRA_REQUEST;
+
+				// There's also stuff we definitely need to send.
+				send(time);
+				return;
+
+			case EXTRA_REQUEST:
+				// Turns out the extra request was not needed, so we will
+				// stop calling rAF. No reason to call it all the time if
+				// no one needs it.
+				state = NO_REQUEST;
+				return;
+		}
+	}
+
+
+	function send(time)
+	{
+		for (var i = messageArray.length; i--; )
+		{
+			var messages = A3(
+				List.foldl,
+				F2( function(toAction, list) { return List.Cons(toAction(time), list); } ),
+				List.Nil,
+				messageArray[i].tickMessages
+			);
+			Task.perform( A2(Signal.send, messageArray[i].address, messages) );
+		}
+		messageArray = [];
+	}
+
+
+	function requestTickSending(address, tickMessages)
+	{
+		return Task.asyncFunction(function(callback) {
+			batchedSending(address, tickMessages);
+			callback(Task.succeed(Utils.Tuple0));
+		});
+	}
+
+
+	return localRuntime.Native.Effects.values = {
+		requestTickSending: F2(requestTickSending)
+	};
+
 };
 
 
@@ -6878,6 +7446,179 @@ Elm.Native.Graphics.Element.make = function(localRuntime) {
 		markdown: markdown
 	};
 
+};
+
+Elm.Native.Http = {};
+Elm.Native.Http.make = function(localRuntime) {
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Http = localRuntime.Native.Http || {};
+	if (localRuntime.Native.Http.values)
+	{
+		return localRuntime.Native.Http.values;
+	}
+
+	var Dict = Elm.Dict.make(localRuntime);
+	var List = Elm.List.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+	var Task = Elm.Native.Task.make(localRuntime);
+
+
+	function send(settings, request)
+	{
+		return Task.asyncFunction(function(callback) {
+			var req = new XMLHttpRequest();
+
+			// start
+			if (settings.onStart.ctor === 'Just')
+			{
+				req.addEventListener('loadStart', function() {
+					var task = settings.onStart._0;
+					Task.spawn(task);
+				});
+			}
+
+			// progress
+			if (settings.onProgress.ctor === 'Just')
+			{
+				req.addEventListener('progress', function(event) {
+					var progress = !event.lengthComputable
+						? Maybe.Nothing
+						: Maybe.Just({
+							_: {},
+							loaded: event.loaded,
+							total: event.total
+						});
+					var task = settings.onProgress._0(progress);
+					Task.spawn(task);
+				});
+			}
+
+			// end
+			req.addEventListener('error', function() {
+				return callback(Task.fail({ ctor: 'RawNetworkError' }));
+			});
+
+			req.addEventListener('timeout', function() {
+				return callback(Task.fail({ ctor: 'RawTimeout' }));
+			});
+
+			req.addEventListener('load', function() {
+				return callback(Task.succeed(toResponse(req)));
+			});
+
+			req.open(request.verb, request.url, true);
+
+			// set all the headers
+			function setHeader(pair) {
+				req.setRequestHeader(pair._0, pair._1);
+			}
+			A2(List.map, setHeader, request.headers);
+
+			// set the timeout
+			req.timeout = settings.timeout;
+
+			// ask for a specific MIME type for the response
+			if (settings.desiredResponseType.ctor === 'Just')
+			{
+				req.overrideMimeType(settings.desiredResponseType._0);
+			}
+
+			req.send(request.body._0);
+		});
+	}
+
+
+	// deal with responses
+
+	function toResponse(req)
+	{
+		var tag = typeof req.response === 'string' ? 'Text' : 'Blob';
+		return {
+			_: {},
+			status: req.status,
+			statusText: req.statusText,
+			headers: parseHeaders(req.getAllResponseHeaders()),
+			url: req.responseURL,
+			value: { ctor: tag, _0: req.response }
+		};
+	}
+
+
+	function parseHeaders(rawHeaders)
+	{
+		var headers = Dict.empty;
+
+		if (!rawHeaders)
+		{
+			return headers;
+		}
+
+		var headerPairs = rawHeaders.split('\u000d\u000a');
+		for (var i = headerPairs.length; i--; )
+		{
+			var headerPair = headerPairs[i];
+			var index = headerPair.indexOf('\u003a\u0020');
+			if (index > 0)
+			{
+				var key = headerPair.substring(0, index);
+				var value = headerPair.substring(index + 2);
+
+				headers = A3(Dict.update, key, function(oldValue) {
+					if (oldValue.ctor === 'Just')
+					{
+						return Maybe.Just(value + ', ' + oldValue._0);
+					}
+					return Maybe.Just(value);
+				}, headers);
+			}
+		}
+
+		return headers;
+	}
+
+
+	function multipart(dataList)
+	{
+		var formData = new FormData();
+
+		while (dataList.ctor !== '[]')
+		{
+			var data = dataList._0;
+			if (type === 'StringData')
+			{
+				formData.append(data._0, data._1);
+			}
+			else
+			{
+				var fileName = data._1.ctor === 'Nothing'
+					? undefined
+					: data._1._0;
+				formData.append(data._0, data._2, fileName);
+			}
+			dataList = dataList._1;
+		}
+
+		return { ctor: 'FormData', formData: formData };
+	}
+
+
+	function uriEncode(string)
+	{
+		return encodeURIComponent(string);
+	}
+
+	function uriDecode(string)
+	{
+		return decodeURIComponent(string);
+	}
+
+	return localRuntime.Native.Http.values = {
+		send: F2(send),
+		multipart: multipart,
+		uriEncode: uriEncode,
+		uriDecode: uriDecode
+	};
 };
 
 Elm.Native.Json = {};
@@ -9886,6 +10627,117 @@ Elm.Native.Text.make = function(localRuntime) {
 	};
 };
 
+Elm.Native.Time = {};
+Elm.Native.Time.make = function(localRuntime)
+{
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Time = localRuntime.Native.Time || {};
+	if (localRuntime.Native.Time.values)
+	{
+		return localRuntime.Native.Time.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+
+	// FRAMES PER SECOND
+
+	function fpsWhen(desiredFPS, isOn)
+	{
+		var msPerFrame = 1000 / desiredFPS;
+		var ticker = NS.input('fps-' + desiredFPS, null);
+
+		function notifyTicker()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+
+		function firstArg(x, y)
+		{
+			return x;
+		}
+
+		// input fires either when isOn changes, or when ticker fires.
+		// Its value is a tuple with the current timestamp, and the state of isOn
+		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
+
+		var initialState = {
+			isOn: false,
+			time: localRuntime.timer.programStart,
+			delta: 0
+		};
+
+		var timeoutId;
+
+		function update(input,state)
+		{
+			var currentTime = input._0;
+			var isOn = input._1;
+			var wasOn = state.isOn;
+			var previousTime = state.time;
+
+			if (isOn)
+			{
+				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
+			}
+			else if (wasOn)
+			{
+				clearTimeout(timeoutId);
+			}
+
+			return {
+				isOn: isOn,
+				time: currentTime,
+				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
+			};
+		}
+
+		return A2(
+			NS.map,
+			function(state) { return state.delta; },
+			A3(NS.foldp, F2(update), update(input.value,initialState), input)
+		);
+	}
+
+
+	// EVERY
+
+	function every(t)
+	{
+		var ticker = NS.input('every-' + t, null);
+		function tellTime()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+		var clock = A2( NS.map, fst, NS.timestamp(ticker) );
+		setInterval(tellTime, t);
+		return clock;
+	}
+
+
+	function fst(pair)
+	{
+		return pair._0;
+	}
+
+
+	function read(s)
+	{
+		var t = Date.parse(s);
+		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
+	}
+
+	return localRuntime.Native.Time.values = {
+		fpsWhen: F2(fpsWhen),
+		every: every,
+		toDate: function(t) { return new window.Date(t); },
+		read: read
+	};
+
+};
+
 Elm.Native.Transform2D = {};
 Elm.Native.Transform2D.make = function(localRuntime) {
 
@@ -12135,15 +12987,18 @@ Elm.QuoteBoxList.make = function (_elm) {
    _L = _N.List.make(_elm),
    $moduleName = "QuoteBoxList",
    $Basics = Elm.Basics.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
    $Html$Events = Elm.Html.Events.make(_elm),
+   $Http = Elm.Http.make(_elm),
+   $Json$Decode = Elm.Json.Decode.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $QuoteBox = Elm.QuoteBox.make(_elm),
-   $RandomQuote = Elm.RandomQuote.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm);
    _op["=>"] = F2(function (v0,
    v1) {
       return {ctor: "_Tuple2"
@@ -12165,75 +13020,120 @@ Elm.QuoteBoxList.make = function (_elm) {
                                                          ,A2(_op["=>"],
                                                          "background-color",
                                                          "black")]));
-   var update = F2(function (action,
-   model) {
+   var maybeAddQuote = F2(function (model,
+   maybeQuote) {
       return function () {
-         switch (action.ctor)
-         {case "AddQuote":
+         switch (maybeQuote.ctor)
+         {case "Just":
             return function () {
-                 var $ = $RandomQuote.genQuote(model.randomQuote),
-                 newQuote = $._0,
-                 randomQuote$ = $._1;
-                 var newQuote$ = A3($QuoteBox.Model,
-                 newQuote.author,
-                 newQuote.imgUrl,
-                 newQuote.quote);
-                 return _U.replace([["randomQuote"
-                                    ,randomQuote$]
+                 var currId = model.nextId;
+                 var quoteBox = {ctor: "_Tuple2"
+                                ,_0: currId
+                                ,_1: A3($QuoteBox.init,
+                                maybeQuote._0.author,
+                                maybeQuote._0.imgUrl,
+                                maybeQuote._0.quote)};
+                 return _U.replace([["nextId"
+                                    ,currId + 1]
                                    ,["quoteBoxList"
                                     ,A2($List._op["::"],
-                                    {ctor: "_Tuple2"
-                                    ,_0: model.nextId
-                                    ,_1: newQuote$},
-                                    model.quoteBoxList)]
-                                   ,["nextId",model.nextId + 1]],
+                                    quoteBox,
+                                    model.quoteBoxList)]],
                  model);
               }();
-            case "DelQuote":
-            return function () {
-                 var xs = A2($List.filter,
-                 function (_v2) {
-                    return function () {
-                       switch (_v2.ctor)
-                       {case "_Tuple2":
-                          return !_U.eq(_v2._0,
-                            action._0);}
-                       _U.badCase($moduleName,
-                       "on line 45, column 48 to 57");
-                    }();
-                 },
-                 model.quoteBoxList);
-                 return _U.replace([["quoteBoxList"
-                                    ,xs]],
-                 model);
-              }();}
+            case "Nothing": return model;}
          _U.badCase($moduleName,
-         "between lines 31 and 46");
+         "between lines 55 and 62");
       }();
    });
-   var init = {_: {}
-              ,nextId: 0
-              ,quoteBoxList: _L.fromArray([])
-              ,randomQuote: $RandomQuote.init};
+   var init = {ctor: "_Tuple2"
+              ,_0: {_: {}
+                   ,nextId: 0
+                   ,quoteBoxList: _L.fromArray([])}
+              ,_1: $Effects.none};
+   var Quote = F3(function (a,
+   b,
+   c) {
+      return {_: {}
+             ,author: a
+             ,imgUrl: b
+             ,quote: c};
+   });
+   var decodeQuote = A4($Json$Decode.object3,
+   Quote,
+   A2($Json$Decode._op[":="],
+   "author",
+   $Json$Decode.string),
+   A2($Json$Decode._op[":="],
+   "imgUrl",
+   $Json$Decode.string),
+   A2($Json$Decode._op[":="],
+   "quote",
+   $Json$Decode.string));
    var DelQuote = function (a) {
       return {ctor: "DelQuote"
              ,_0: a};
    };
    var viewQuote = F2(function (address,
-   _v6) {
+   _v2) {
       return function () {
-         switch (_v6.ctor)
+         switch (_v2.ctor)
          {case "_Tuple2":
             return A2($QuoteBox.view,
               A2($Signal.forwardTo,
               address,
-              $Basics.always(DelQuote(_v6._0))),
-              _v6._1);}
+              $Basics.always(DelQuote(_v2._0))),
+              _v2._1);}
          _U.badCase($moduleName,
-         "on line 60, column 5 to 74");
+         "on line 76, column 5 to 74");
       }();
    });
-   var AddQuote = {ctor: "AddQuote"};
+   var GotQuote = function (a) {
+      return {ctor: "GotQuote"
+             ,_0: a};
+   };
+   var getRandomQuote = $Effects.task($Task.map(GotQuote)($Task.toMaybe(A2($Http.get,
+   decodeQuote,
+   "/api/random-quote"))));
+   var update = F2(function (action,
+   model) {
+      return function () {
+         switch (action.ctor)
+         {case "DelQuote":
+            return function () {
+                 var xs = A2($List.filter,
+                 function (_v9) {
+                    return function () {
+                       switch (_v9.ctor)
+                       {case "_Tuple2":
+                          return !_U.eq(_v9._0,
+                            action._0);}
+                       _U.badCase($moduleName,
+                       "on line 48, column 48 to 57");
+                    }();
+                 },
+                 model.quoteBoxList);
+                 return {ctor: "_Tuple2"
+                        ,_0: _U.replace([["quoteBoxList"
+                                         ,xs]],
+                        model)
+                        ,_1: $Effects.none};
+              }();
+            case "GotQuote":
+            return {ctor: "_Tuple2"
+                   ,_0: A2(maybeAddQuote,
+                   model,
+                   action._0)
+                   ,_1: $Effects.none};
+            case "RequestQuote":
+            return {ctor: "_Tuple2"
+                   ,_0: model
+                   ,_1: getRandomQuote};}
+         _U.badCase($moduleName,
+         "between lines 43 and 51");
+      }();
+   });
+   var RequestQuote = {ctor: "RequestQuote"};
    var view = F2(function (address,
    model) {
       return function () {
@@ -12244,20 +13144,17 @@ Elm.QuoteBoxList.make = function (_elm) {
          _L.fromArray([buttonStyles
                       ,A2($Html$Events.onClick,
                       address,
-                      AddQuote)]),
+                      RequestQuote)]),
          _L.fromArray([$Html.text("Add random quote!")]));
          return A2($Html.div,
          _L.fromArray([panelStyles]),
          A2($List._op["::"],btn,qts));
       }();
    });
-   var Model = F3(function (a,
-   b,
-   c) {
+   var Model = F2(function (a,b) {
       return {_: {}
-             ,nextId: c
-             ,quoteBoxList: b
-             ,randomQuote: a};
+             ,nextId: b
+             ,quoteBoxList: a};
    });
    _elm.QuoteBoxList.values = {_op: _op
                               ,init: init
@@ -12265,384 +13162,6 @@ Elm.QuoteBoxList.make = function (_elm) {
                               ,view: view
                               ,Model: Model};
    return _elm.QuoteBoxList.values;
-};
-Elm.Random = Elm.Random || {};
-Elm.Random.make = function (_elm) {
-   "use strict";
-   _elm.Random = _elm.Random || {};
-   if (_elm.Random.values)
-   return _elm.Random.values;
-   var _op = {},
-   _N = Elm.Native,
-   _U = _N.Utils.make(_elm),
-   _L = _N.List.make(_elm),
-   $moduleName = "Random",
-   $Basics = Elm.Basics.make(_elm),
-   $List = Elm.List.make(_elm);
-   var magicNum8 = 2147483562;
-   var range = function (_v0) {
-      return function () {
-         return {ctor: "_Tuple2"
-                ,_0: 0
-                ,_1: magicNum8};
-      }();
-   };
-   var magicNum7 = 2137383399;
-   var magicNum6 = 2147483563;
-   var magicNum5 = 3791;
-   var magicNum4 = 40692;
-   var magicNum3 = 52774;
-   var magicNum2 = 12211;
-   var magicNum1 = 53668;
-   var magicNum0 = 40014;
-   var generate = F2(function (_v2,
-   seed) {
-      return function () {
-         switch (_v2.ctor)
-         {case "Generator":
-            return _v2._0(seed);}
-         _U.badCase($moduleName,
-         "on line 246, column 5 to 19");
-      }();
-   });
-   var Seed = F4(function (a,
-   b,
-   c,
-   d) {
-      return {_: {}
-             ,next: b
-             ,range: d
-             ,split: c
-             ,state: a};
-   });
-   var State = F2(function (a,b) {
-      return {ctor: "State"
-             ,_0: a
-             ,_1: b};
-   });
-   var initState = function (s$) {
-      return function () {
-         var s = A2($Basics.max,
-         s$,
-         0 - s$);
-         var q = s / (magicNum6 - 1) | 0;
-         var s2 = A2($Basics._op["%"],
-         q,
-         magicNum7 - 1);
-         var s1 = A2($Basics._op["%"],
-         s,
-         magicNum6 - 1);
-         return A2(State,s1 + 1,s2 + 1);
-      }();
-   };
-   var next = function (_v5) {
-      return function () {
-         switch (_v5.ctor)
-         {case "State":
-            return function () {
-                 var k$ = _v5._1 / magicNum3 | 0;
-                 var s2$ = magicNum4 * (_v5._1 - k$ * magicNum3) - k$ * magicNum5;
-                 var s2$$ = _U.cmp(s2$,
-                 0) < 0 ? s2$ + magicNum7 : s2$;
-                 var k = _v5._0 / magicNum1 | 0;
-                 var s1$ = magicNum0 * (_v5._0 - k * magicNum1) - k * magicNum2;
-                 var s1$$ = _U.cmp(s1$,
-                 0) < 0 ? s1$ + magicNum6 : s1$;
-                 var z = s1$$ - s2$$;
-                 var z$ = _U.cmp(z,
-                 1) < 0 ? z + magicNum8 : z;
-                 return {ctor: "_Tuple2"
-                        ,_0: z$
-                        ,_1: A2(State,s1$$,s2$$)};
-              }();}
-         _U.badCase($moduleName,
-         "between lines 290 and 299");
-      }();
-   };
-   var split = function (_v9) {
-      return function () {
-         switch (_v9.ctor)
-         {case "State":
-            return function () {
-                 var _raw = $Basics.snd(next(_v9)),
-                 $ = _raw.ctor === "State" ? _raw : _U.badCase($moduleName,
-                 "on line 306, column 25 to 38"),
-                 t1 = $._0,
-                 t2 = $._1;
-                 var new_s2 = _U.eq(_v9._1,
-                 1) ? magicNum7 - 1 : _v9._1 - 1;
-                 var new_s1 = _U.eq(_v9._0,
-                 magicNum6 - 1) ? 1 : _v9._0 + 1;
-                 return {ctor: "_Tuple2"
-                        ,_0: A2(State,new_s1,t2)
-                        ,_1: A2(State,t1,new_s2)};
-              }();}
-         _U.badCase($moduleName,
-         "between lines 304 and 308");
-      }();
-   };
-   var initialSeed = function (n) {
-      return A4(Seed,
-      initState(n),
-      next,
-      split,
-      range);
-   };
-   var Generator = function (a) {
-      return {ctor: "Generator"
-             ,_0: a};
-   };
-   var customGenerator = function (generate) {
-      return Generator(generate);
-   };
-   var listHelp = F4(function (list,
-   n,
-   generate,
-   seed) {
-      return _U.cmp(n,
-      1) < 0 ? {ctor: "_Tuple2"
-               ,_0: $List.reverse(list)
-               ,_1: seed} : function () {
-         var $ = generate(seed),
-         value = $._0,
-         seed$ = $._1;
-         return A4(listHelp,
-         A2($List._op["::"],value,list),
-         n - 1,
-         generate,
-         seed$);
-      }();
-   });
-   var list = F2(function (n,
-   _v13) {
-      return function () {
-         switch (_v13.ctor)
-         {case "Generator":
-            return Generator(function (seed) {
-                 return A4(listHelp,
-                 _L.fromArray([]),
-                 n,
-                 _v13._0,
-                 seed);
-              });}
-         _U.badCase($moduleName,
-         "between lines 182 and 183");
-      }();
-   });
-   var pair = F2(function (_v16,
-   _v17) {
-      return function () {
-         switch (_v17.ctor)
-         {case "Generator":
-            return function () {
-                 switch (_v16.ctor)
-                 {case "Generator":
-                    return Generator(function (seed) {
-                         return function () {
-                            var $ = _v16._0(seed),
-                            left = $._0,
-                            seed$ = $._1;
-                            var $ = _v17._0(seed$),
-                            right = $._0,
-                            seed$$ = $._1;
-                            return {ctor: "_Tuple2"
-                                   ,_0: {ctor: "_Tuple2"
-                                        ,_0: left
-                                        ,_1: right}
-                                   ,_1: seed$$};
-                         }();
-                      });}
-                 _U.badCase($moduleName,
-                 "between lines 159 and 163");
-              }();}
-         _U.badCase($moduleName,
-         "between lines 159 and 163");
-      }();
-   });
-   var minInt = -2147483648;
-   var maxInt = 2147483647;
-   var iLogBase = F2(function (b,
-   i) {
-      return _U.cmp(i,
-      b) < 0 ? 1 : 1 + A2(iLogBase,
-      b,
-      i / b | 0);
-   });
-   var $int = F2(function (a,b) {
-      return Generator(function (seed) {
-         return function () {
-            var base = 2147483561;
-            var f = F3(function (n,
-            acc,
-            state) {
-               return function () {
-                  switch (n)
-                  {case 0: return {ctor: "_Tuple2"
-                                  ,_0: acc
-                                  ,_1: state};}
-                  return function () {
-                     var $ = seed.next(state),
-                     x = $._0,
-                     state$ = $._1;
-                     return A3(f,
-                     n - 1,
-                     x + acc * base,
-                     state$);
-                  }();
-               }();
-            });
-            var $ = _U.cmp(a,
-            b) < 0 ? {ctor: "_Tuple2"
-                     ,_0: a
-                     ,_1: b} : {ctor: "_Tuple2"
-                               ,_0: b
-                               ,_1: a},
-            lo = $._0,
-            hi = $._1;
-            var k = hi - lo + 1;
-            var n = A2(iLogBase,base,k);
-            var $ = A3(f,n,1,seed.state),
-            v = $._0,
-            state$ = $._1;
-            return {ctor: "_Tuple2"
-                   ,_0: lo + A2($Basics._op["%"],
-                   v,
-                   k)
-                   ,_1: _U.replace([["state"
-                                    ,state$]],
-                   seed)};
-         }();
-      });
-   });
-   var $float = F2(function (a,b) {
-      return Generator(function (seed) {
-         return function () {
-            var $ = A2(generate,
-            A2($int,minInt,maxInt),
-            seed),
-            number = $._0,
-            seed$ = $._1;
-            var negativeOneToOne = $Basics.toFloat(number) / $Basics.toFloat(maxInt - minInt);
-            var $ = _U.cmp(a,
-            b) < 0 ? {ctor: "_Tuple2"
-                     ,_0: a
-                     ,_1: b} : {ctor: "_Tuple2"
-                               ,_0: b
-                               ,_1: a},
-            lo = $._0,
-            hi = $._1;
-            var scaled = (lo + hi) / 2 + (hi - lo) * negativeOneToOne;
-            return {ctor: "_Tuple2"
-                   ,_0: scaled
-                   ,_1: seed$};
-         }();
-      });
-   });
-   _elm.Random.values = {_op: _op
-                        ,$int: $int
-                        ,$float: $float
-                        ,list: list
-                        ,pair: pair
-                        ,minInt: minInt
-                        ,maxInt: maxInt
-                        ,generate: generate
-                        ,initialSeed: initialSeed
-                        ,customGenerator: customGenerator
-                        ,Seed: Seed};
-   return _elm.Random.values;
-};
-Elm.RandomQuote = Elm.RandomQuote || {};
-Elm.RandomQuote.make = function (_elm) {
-   "use strict";
-   _elm.RandomQuote = _elm.RandomQuote || {};
-   if (_elm.RandomQuote.values)
-   return _elm.RandomQuote.values;
-   var _op = {},
-   _N = Elm.Native,
-   _U = _N.Utils.make(_elm),
-   _L = _N.List.make(_elm),
-   $moduleName = "RandomQuote",
-   $Array = Elm.Array.make(_elm),
-   $Basics = Elm.Basics.make(_elm),
-   $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Random = Elm.Random.make(_elm),
-   $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
-   var mkQuotes = $Array.fromList(_L.fromArray([{_: {}
-                                                ,author: "Linus Torvalds"
-                                                ,imgUrl: "images/Linus-Torvalds.jpg"
-                                                ,quote: "Talk is cheap, show me the code"}
-                                               ,{_: {}
-                                                ,author: "Linus Torvalds"
-                                                ,imgUrl: "images/Linus-Torvalds.jpg"
-                                                ,quote: "\n                   No-one has even called me a cool dude. I\'m\n                   somewhere between geek and normal.\n                   "}
-                                               ,{_: {}
-                                                ,author: "Linus Torvalds"
-                                                ,imgUrl: "images/Linus-Torvalds.jpg"
-                                                ,quote: "Software is like sex: its better when its free."}
-                                               ,{_: {}
-                                                ,author: "Dennis M Ritchie"
-                                                ,imgUrl: "images/dennis_macalistair_ritchie_.jpeg"
-                                                ,quote: "C is quirky, flawed, and an enormous success."}]));
-   var init = function () {
-      var quotes$ = mkQuotes;
-      return {_: {}
-             ,gen: A2($Random.$int,
-             0,
-             $Array.length(quotes$) - 1)
-             ,quotes: quotes$
-             ,seed: $Random.initialSeed(42)};
-   }();
-   var RandomQuote = F3(function (a,
-   b,
-   c) {
-      return {_: {}
-             ,gen: b
-             ,quotes: c
-             ,seed: a};
-   });
-   var Quote = F3(function (a,
-   b,
-   c) {
-      return {_: {}
-             ,author: a
-             ,imgUrl: b
-             ,quote: c};
-   });
-   var genQuote = function (rq) {
-      return function () {
-         var $ = A2($Random.generate,
-         rq.gen,
-         rq.seed),
-         index = $._0,
-         seed$ = $._1;
-         var quote = function () {
-            var _v0 = A2($Array.get,
-            index,
-            rq.quotes);
-            switch (_v0.ctor)
-            {case "Just": return _v0._0;
-               case "Nothing": return A3(Quote,
-                 "Error",
-                 "Error",
-                 "Error");}
-            _U.badCase($moduleName,
-            "between lines 34 and 37");
-         }();
-         return {ctor: "_Tuple2"
-                ,_0: quote
-                ,_1: _U.replace([["seed"
-                                 ,seed$]],
-                rq)};
-      }();
-   };
-   _elm.RandomQuote.values = {_op: _op
-                             ,init: init
-                             ,genQuote: genQuote
-                             ,RandomQuote: RandomQuote
-                             ,Quote: Quote};
-   return _elm.RandomQuote.values;
 };
 Elm.Result = Elm.Result || {};
 Elm.Result.make = function (_elm) {
@@ -13033,61 +13552,113 @@ Elm.Signal.make = function (_elm) {
    return _elm.Signal.values;
 };
 Elm.StartApp = Elm.StartApp || {};
-Elm.StartApp.Simple = Elm.StartApp.Simple || {};
-Elm.StartApp.Simple.make = function (_elm) {
+Elm.StartApp.make = function (_elm) {
    "use strict";
    _elm.StartApp = _elm.StartApp || {};
-   _elm.StartApp.Simple = _elm.StartApp.Simple || {};
-   if (_elm.StartApp.Simple.values)
-   return _elm.StartApp.Simple.values;
+   if (_elm.StartApp.values)
+   return _elm.StartApp.values;
    var _op = {},
    _N = Elm.Native,
    _U = _N.Utils.make(_elm),
    _L = _N.List.make(_elm),
-   $moduleName = "StartApp.Simple",
+   $moduleName = "StartApp",
    $Basics = Elm.Basics.make(_elm),
+   $Effects = Elm.Effects.make(_elm),
    $Html = Elm.Html.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
-   $Signal = Elm.Signal.make(_elm);
+   $Signal = Elm.Signal.make(_elm),
+   $Task = Elm.Task.make(_elm);
    var start = function (config) {
       return function () {
-         var actions = $Signal.mailbox($Maybe.Nothing);
-         var address = A2($Signal.forwardTo,
-         actions.address,
-         $Maybe.Just);
-         var model = A3($Signal.foldp,
-         F2(function (_v0,model) {
+         var updateStep = F2(function (action,
+         _v0) {
             return function () {
                switch (_v0.ctor)
-               {case "Just":
-                  return A2(config.update,
-                    _v0._0,
-                    model);}
+               {case "_Tuple2":
+                  return function () {
+                       var $ = A2(config.update,
+                       action,
+                       _v0._0),
+                       newModel = $._0,
+                       additionalEffects = $._1;
+                       return {ctor: "_Tuple2"
+                              ,_0: newModel
+                              ,_1: $Effects.batch(_L.fromArray([_v0._1
+                                                               ,additionalEffects]))};
+                    }();}
                _U.badCase($moduleName,
-               "on line 91, column 34 to 60");
+               "between lines 94 and 97");
             }();
-         }),
-         config.model,
-         actions.signal);
-         return A2($Signal.map,
-         config.view(address),
-         model);
+         });
+         var update = F2(function (actions,
+         _v4) {
+            return function () {
+               switch (_v4.ctor)
+               {case "_Tuple2":
+                  return A3($List.foldl,
+                    updateStep,
+                    {ctor: "_Tuple2"
+                    ,_0: _v4._0
+                    ,_1: $Effects.none},
+                    actions);}
+               _U.badCase($moduleName,
+               "on line 101, column 13 to 64");
+            }();
+         });
+         var messages = $Signal.mailbox(_L.fromArray([]));
+         var singleton = function (action) {
+            return _L.fromArray([action]);
+         };
+         var address = A2($Signal.forwardTo,
+         messages.address,
+         singleton);
+         var inputs = $Signal.mergeMany(A2($List._op["::"],
+         messages.signal,
+         A2($List.map,
+         $Signal.map(singleton),
+         config.inputs)));
+         var effectsAndModel = A3($Signal.foldp,
+         update,
+         config.init,
+         inputs);
+         var model = A2($Signal.map,
+         $Basics.fst,
+         effectsAndModel);
+         return {_: {}
+                ,html: A2($Signal.map,
+                config.view(address),
+                model)
+                ,model: model
+                ,tasks: A2($Signal.map,
+                function ($) {
+                   return $Effects.toTask(messages.address)($Basics.snd($));
+                },
+                effectsAndModel)};
       }();
    };
-   var Config = F3(function (a,
-   b,
-   c) {
+   var App = F3(function (a,b,c) {
       return {_: {}
-             ,model: a
-             ,update: c
-             ,view: b};
+             ,html: a
+             ,model: b
+             ,tasks: c};
    });
-   _elm.StartApp.Simple.values = {_op: _op
-                                 ,Config: Config
-                                 ,start: start};
-   return _elm.StartApp.Simple.values;
+   var Config = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,init: a
+             ,inputs: d
+             ,update: b
+             ,view: c};
+   });
+   _elm.StartApp.values = {_op: _op
+                          ,start: start
+                          ,Config: Config
+                          ,App: App};
+   return _elm.StartApp.values;
 };
 Elm.String = Elm.String || {};
 Elm.String.make = function (_elm) {
@@ -13500,6 +14071,85 @@ Elm.Text.make = function (_elm) {
                       ,Over: Over
                       ,Through: Through};
    return _elm.Text.values;
+};
+Elm.Time = Elm.Time || {};
+Elm.Time.make = function (_elm) {
+   "use strict";
+   _elm.Time = _elm.Time || {};
+   if (_elm.Time.values)
+   return _elm.Time.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Time",
+   $Basics = Elm.Basics.make(_elm),
+   $Native$Signal = Elm.Native.Signal.make(_elm),
+   $Native$Time = Elm.Native.Time.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var delay = $Native$Signal.delay;
+   var since = F2(function (time,
+   signal) {
+      return function () {
+         var stop = A2($Signal.map,
+         $Basics.always(-1),
+         A2(delay,time,signal));
+         var start = A2($Signal.map,
+         $Basics.always(1),
+         signal);
+         var delaydiff = A3($Signal.foldp,
+         F2(function (x,y) {
+            return x + y;
+         }),
+         0,
+         A2($Signal.merge,start,stop));
+         return A2($Signal.map,
+         F2(function (x,y) {
+            return !_U.eq(x,y);
+         })(0),
+         delaydiff);
+      }();
+   });
+   var timestamp = $Native$Signal.timestamp;
+   var every = $Native$Time.every;
+   var fpsWhen = $Native$Time.fpsWhen;
+   var fps = function (targetFrames) {
+      return A2(fpsWhen,
+      targetFrames,
+      $Signal.constant(true));
+   };
+   var inMilliseconds = function (t) {
+      return t;
+   };
+   var millisecond = 1;
+   var second = 1000 * millisecond;
+   var minute = 60 * second;
+   var hour = 60 * minute;
+   var inHours = function (t) {
+      return t / hour;
+   };
+   var inMinutes = function (t) {
+      return t / minute;
+   };
+   var inSeconds = function (t) {
+      return t / second;
+   };
+   _elm.Time.values = {_op: _op
+                      ,millisecond: millisecond
+                      ,second: second
+                      ,minute: minute
+                      ,hour: hour
+                      ,inMilliseconds: inMilliseconds
+                      ,inSeconds: inSeconds
+                      ,inMinutes: inMinutes
+                      ,inHours: inHours
+                      ,fps: fps
+                      ,fpsWhen: fpsWhen
+                      ,every: every
+                      ,timestamp: timestamp
+                      ,delay: delay
+                      ,since: since};
+   return _elm.Time.values;
 };
 Elm.Transform2D = Elm.Transform2D || {};
 Elm.Transform2D.make = function (_elm) {

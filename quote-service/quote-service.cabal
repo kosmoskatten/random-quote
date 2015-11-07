@@ -24,6 +24,7 @@ executable quote-service
                      , bytestring
                      , http-types
                      , text
+                     , transformers
                      , wai
                      , warp
   hs-source-dirs:      src
